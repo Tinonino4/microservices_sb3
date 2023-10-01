@@ -14,6 +14,7 @@
         <module>product-service</module>
         <module>recomendation-service</module>
         <module>review-service</module>
+        <module>utils</module>
     </modules>
 
     <name>microservices</name>
