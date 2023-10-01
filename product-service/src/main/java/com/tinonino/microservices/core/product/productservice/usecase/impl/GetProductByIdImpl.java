@@ -3,16 +3,16 @@ package com.tinonino.microservices.core.product.productservice.usecase.impl;
 import com.tinonino.microservices.core.product.productservice.domain.Product;
 import com.tinonino.microservices.core.product.productservice.domain.exception.InvalidInputException;
 import com.tinonino.microservices.core.product.productservice.domain.exception.ProductNotFoundException;
-import com.tinonino.microservices.core.product.productservice.usecase.GetProduct;
+import com.tinonino.microservices.core.product.productservice.usecase.GetProductById;
 import com.tinonino.microservices.core.utils.http.ServiceUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class GetProductImpl implements GetProduct {
+public class GetProductByIdImpl implements GetProductById {
     private final ServiceUtil serviceUtil;
     @Autowired
-    public GetProductImpl(ServiceUtil serviceUtil) {
+    public GetProductByIdImpl(ServiceUtil serviceUtil) {
         this.serviceUtil = serviceUtil;
     }
     @Override

@@ -1,5 +1,7 @@
 package com.tinonino.microservices.core.product.productservice.domain;
 
+import java.util.Objects;
+
 public class Product {
     private final int productId;
     private final String name;
@@ -34,5 +36,19 @@ public class Product {
 
     public String getServiceAddress() {
         return serviceAddress;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return productId == product.productId && weight == product.weight && Objects.equals(name, product.name) && Objects.equals(serviceAddress, product.serviceAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(productId, name, weight, serviceAddress);
     }
 }
