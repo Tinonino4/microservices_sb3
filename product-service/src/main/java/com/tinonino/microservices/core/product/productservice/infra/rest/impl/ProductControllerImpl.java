@@ -23,7 +23,6 @@ public class ProductControllerImpl implements ProductController {
     @Override
     public Product getProduct(int productId) {
         LOG.debug("/product return the found product for productId={}", productId);
-
         return getProductByIdUseCase.execute(productId);
     }
 }

@@ -1,8 +1,0 @@
-
-server.port: 7002
-server.error.include-message: always
-
-logging:
-  level:
-    root: INFO
-    com.tinonino: DEBUG

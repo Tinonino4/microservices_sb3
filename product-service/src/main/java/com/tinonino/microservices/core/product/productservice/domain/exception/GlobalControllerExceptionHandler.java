@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 @RestControllerAdvice
 public class GlobalControllerExceptionHandler {
@@ -27,6 +28,13 @@ public class GlobalControllerExceptionHandler {
         return createHttpErrorInfo(NOT_FOUND, request, ex);
     }
 
+    @ResponseStatus(UNPROCESSABLE_ENTITY)
+    @ExceptionHandler(InvalidInputException.class)
+    public @ResponseBody HttpErrorInfo handleInvalidInputException(
+            ServerHttpRequest request, InvalidInputException ex) {
+
+        return createHttpErrorInfo(UNPROCESSABLE_ENTITY, request, ex);
+    }
     private HttpErrorInfo createHttpErrorInfo(
             HttpStatus httpStatus, ServerHttpRequest request, Exception ex) {
 
