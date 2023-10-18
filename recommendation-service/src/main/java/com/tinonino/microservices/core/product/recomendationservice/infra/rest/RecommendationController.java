@@ -1,7 +1,6 @@
 package com.tinonino.microservices.core.product.recomendationservice.infra.rest;
 
 import com.tinonino.microservices.core.product.recomendationservice.domain.Recommendation;
-import com.tinonino.microservices.core.product.recomendationservice.infra.rest.model.RecommendationResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
