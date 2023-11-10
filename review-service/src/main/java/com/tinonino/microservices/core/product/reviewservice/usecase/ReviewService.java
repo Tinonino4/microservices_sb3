@@ -5,6 +5,8 @@ import com.tinonino.microservices.core.product.reviewservice.infra.rest.model.Re
 
 import java.util.List;
 
-public interface GetReviewsByProductId {
-    List<ReviewResponse> execute(int productId);
+public interface ReviewService {
+    Review createReview(Review review);
+    List<Review> getReviewsByProductId(int productId);
+    void deleteReviews(int productId);
 }
