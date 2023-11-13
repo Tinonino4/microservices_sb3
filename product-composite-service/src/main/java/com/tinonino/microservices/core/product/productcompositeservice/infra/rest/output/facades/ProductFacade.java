@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
 
@@ -35,12 +36,12 @@ public class ProductFacade {
     ) {
         this.restTemplate = restTemplate;
         this.mapper = mapper;
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/product/";
+        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/products";
     }
 
     public Product getProduct(int productId) {
         try {
-            String url = productServiceUrl + productId;
+            String url = productServiceUrl + "/" + productId;
             LOG.debug("Will call getProduct API on URL: {}", url);
 
             Product product = restTemplate.getForObject(url, Product.class);
@@ -62,6 +63,42 @@ public class ProductFacade {
                     LOG.warn("Error body: {}", ex.getResponseBodyAsString());
                     throw ex;
             }
+        }
+    }
+    public Product createProduct(Product body) {
+
+        try {
+            String url = productServiceUrl;
+            LOG.debug("Will post a new product to URL: {}", url);
+            Product product = restTemplate.postForObject(url, body, Product.class);
+            LOG.debug("Created a product with id: {}", product.getProductId());
+            return product;
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+    }
+
+    public void deleteProduct(int productId) {
+        try {
+            String url = productServiceUrl + "/" + productId;
+            LOG.debug("Will call the deleteProduct API on URL: {}", url);
+            restTemplate.delete(url);
+        } catch (HttpClientErrorException ex) {
+            throw handleHttpClientException(ex);
+        }
+    }
+
+    private RuntimeException handleHttpClientException(HttpClientErrorException ex) {
+        switch (Objects.requireNonNull(HttpStatus.resolve(ex.getStatusCode().value()))) {
+            case NOT_FOUND:
+                return new ProductNotFoundException(getErrorMessage(ex));
+            case UNPROCESSABLE_ENTITY:
+                return new InvalidInputException(getErrorMessage(ex));
+
+            default:
+                LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
+                LOG.warn("Error body: {}", ex.getResponseBodyAsString());
+                return ex;
         }
     }
     private String getErrorMessage(HttpClientErrorException ex) {

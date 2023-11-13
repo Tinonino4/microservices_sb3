@@ -11,7 +11,7 @@ import com.tinonino.microservices.core.product.productcompositeservice.domain.ex
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.ProductFacade;
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.RecommendationFacade;
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.ReviewFacade;
-import com.tinonino.microservices.core.product.productcompositeservice.usecase.GetProductCompositeById;
+import com.tinonino.microservices.core.product.productcompositeservice.usecase.ProductCompositeService;
 import com.tinonino.microservices.core.utils.http.ServiceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class GetProductCompositeByIdImpl implements GetProductCompositeById {
-    private static final Logger LOG = LoggerFactory.getLogger(GetProductCompositeByIdImpl.class);
+public class ProductCompositeServiceImpl implements ProductCompositeService {
+    private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeServiceImpl.class);
 
     private final ServiceUtil serviceUtil;
     private final ProductFacade productFacade;
@@ -31,7 +31,7 @@ public class GetProductCompositeByIdImpl implements GetProductCompositeById {
     private final ReviewFacade reviewFacade;
 
     @Autowired
-    public GetProductCompositeByIdImpl(
+    public ProductCompositeServiceImpl(
             ServiceUtil serviceUtil,
             ProductFacade productFacade,
             RecommendationFacade recommendationFacade,
@@ -41,8 +41,38 @@ public class GetProductCompositeByIdImpl implements GetProductCompositeById {
         this.reviewFacade = reviewFacade;
         this.recommendationFacade = recommendationFacade;
     }
+
     @Override
-    public ProductAggregate execute(int productId) {
+    public void createProduct(ProductAggregate productAggregate) {
+        try {
+            LOG.debug("createCompositeProduct: creates a new composite entity for productId: {}", productAggregate.getProductId());
+            Product product = new Product(productAggregate.getProductId(), productAggregate.getName(), productAggregate.getWeight(), null);
+            productFacade.createProduct(product);
+
+            if (productAggregate.getRecommendations() != null) {
+                productAggregate.getRecommendations().forEach(r -> {
+                    Recommendation recommendation = new Recommendation(productAggregate.getProductId(), r.getRecommendationId(), r.getAuthor(), r.getRate(), r.getContent(), null);
+                    recommendationFacade.createRecommendation(recommendation);
+                });
+            }
+
+            if (productAggregate.getReviews() != null) {
+                productAggregate.getReviews().forEach(r -> {
+                    Review review = new Review(productAggregate.getProductId(), r.getReviewId(), r.getAuthor(), r.getSubject(), r.getContent(), null);
+                    reviewFacade.createReview(review);
+                });
+            }
+
+            LOG.debug("createCompositeProduct: composite entities created for productId: {}", productAggregate.getProductId());
+
+        } catch (RuntimeException re) {
+            LOG.warn("createCompositeProduct failed", re);
+            throw re;
+        }
+    }
+
+    @Override
+    public ProductAggregate getProduct(int productId) {
         Product product = productFacade.getProduct(productId);
         if (product == null) {
             throw new ProductNotFoundException("No product found for productId: " + productId);
@@ -50,6 +80,15 @@ public class GetProductCompositeByIdImpl implements GetProductCompositeById {
         List<Recommendation> recommendations = recommendationFacade.getRecommendations(productId);
         List<Review> reviews = reviewFacade.getReviews(productId);
         return createProductAggregate(product, recommendations, reviews, serviceUtil.getServiceAddress());
+    }
+
+    @Override
+    public void deleteProduct(int productId) {
+        LOG.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
+        productFacade.deleteProduct(productId);
+        recommendationFacade.deleteRecommendations(productId);
+        reviewFacade.deleteReviews(productId);
+        LOG.debug("deleteCompositeProduct: aggregate entities deleted for productId: {}", productId);
     }
 
     private ProductAggregate createProductAggregate(
@@ -64,12 +103,12 @@ public class GetProductCompositeByIdImpl implements GetProductCompositeById {
         // 2. Copy summary recommendation info, if available
         List<RecommendationSummary> recommendationSummaries =
                 (recommendations == null) ? null : recommendations.stream()
-                        .map(r -> new RecommendationSummary(r.recommendationId(), r.author(), r.rate()))
+                        .map(r -> new RecommendationSummary(r.recommendationId(), r.author(), r.rate(), r.content()))
                         .collect(Collectors.toList());
         // 3. Copy summary review info, if available
         List<ReviewSummary> reviewSummaries =
                 (reviews == null) ? null : reviews.stream()
-                        .map(r -> new ReviewSummary(r.reviewId(), r.author(), r.subject()))
+                        .map(r -> new ReviewSummary(r.reviewId(), r.author(), r.subject(), r.content()))
                         .collect(Collectors.toList());
         // 4. Create info regarding the involved microservices addresses
         String productAddress = product.getServiceAddress();

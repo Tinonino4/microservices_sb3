@@ -58,7 +58,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 		assertEquals(1, repository.count());
 
 		postAndVerifyRecommendation(productId, recommendationId, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/recommendation")
+				.jsonPath("$.path").isEqualTo("/recommendations")
 				.jsonPath("$.message").isEqualTo("Duplicate key, Product Id: 1, Recommendation Id:1");
 
 		assertEquals(1, repository.count());
@@ -83,7 +83,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 	void getRecommendationsMissingParameter() {
 
 		getAndVerifyRecommendationsByProductId("", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/recommendation")
+				.jsonPath("$.path").isEqualTo("/recommendations")
 				.jsonPath("$.message").isEqualTo("Required query parameter 'productId' is not present.");
 	}
 
@@ -91,7 +91,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 	void getRecommendationsInvalidParameter() {
 
 		getAndVerifyRecommendationsByProductId("?productId=no-integer", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/recommendation")
+				.jsonPath("$.path").isEqualTo("/recommendations")
 				.jsonPath("$.message").isEqualTo("Type mismatch.");
 	}
 
@@ -108,7 +108,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 		int productIdInvalid = -1;
 
 		getAndVerifyRecommendationsByProductId("?productId=" + productIdInvalid, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/recommendation")
+				.jsonPath("$.path").isEqualTo("/recommendations")
 				.jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
 	}
 
@@ -118,7 +118,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 
 	private WebTestClient.BodyContentSpec getAndVerifyRecommendationsByProductId(String productIdQuery, HttpStatus expectedStatus) {
 		return client.get()
-				.uri("/recommendation" + productIdQuery)
+				.uri("/recommendations" + productIdQuery)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)
@@ -129,7 +129,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 	private WebTestClient.BodyContentSpec postAndVerifyRecommendation(int productId, int recommendationId, HttpStatus expectedStatus) {
 		Recommendation recommendation = new Recommendation(productId, recommendationId, "Author " + recommendationId, recommendationId, "Content " + recommendationId, "SA");
 		return client.post()
-				.uri("/recommendation")
+				.uri("/recommendations")
 				.body(just(recommendation), Recommendation.class)
 				.accept(APPLICATION_JSON)
 				.exchange()
@@ -140,7 +140,7 @@ class RecommendationServiceApplicationTests extends  MongoDbTestBase {
 
 	private WebTestClient.BodyContentSpec deleteAndVerifyRecommendationsByProductId(int productId, HttpStatus expectedStatus) {
 		return client.delete()
-				.uri("/recommendation?productId=" + productId)
+				.uri("/recommendations?productId=" + productId)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)

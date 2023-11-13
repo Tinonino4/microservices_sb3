@@ -62,7 +62,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 		assertEquals(1, repository.count());
 
 		postAndVerifyReview(productId, reviewId, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/review")
+				.jsonPath("$.path").isEqualTo("/reviews")
 				.jsonPath("$.message").isEqualTo("Duplicate key, Product Id: 1, Review Id:1");
 
 		assertEquals(1, repository.count());
@@ -87,7 +87,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 	void getReviewsMissingParameter() {
 
 		getAndVerifyReviewsByProductId("", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/review")
+				.jsonPath("$.path").isEqualTo("/reviews")
 				.jsonPath("$.message").isEqualTo("Required query parameter 'productId' is not present.");
 	}
 
@@ -95,7 +95,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 	void getReviewsInvalidParameter() {
 
 		getAndVerifyReviewsByProductId("?productId=no-integer", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/review")
+				.jsonPath("$.path").isEqualTo("/reviews")
 				.jsonPath("$.message").isEqualTo("Type mismatch.");
 	}
 
@@ -112,7 +112,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 		int productIdInvalid = -1;
 
 		getAndVerifyReviewsByProductId("?productId=" + productIdInvalid, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/review")
+				.jsonPath("$.path").isEqualTo("/reviews")
 				.jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
 	}
 
@@ -122,7 +122,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 
 	private WebTestClient.BodyContentSpec getAndVerifyReviewsByProductId(String productIdQuery, HttpStatus expectedStatus) {
 		return client.get()
-				.uri("/review" + productIdQuery)
+				.uri("/reviews" + productIdQuery)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)
@@ -133,7 +133,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 	private WebTestClient.BodyContentSpec postAndVerifyReview(int productId, int reviewId, HttpStatus expectedStatus) {
 		Review review = new Review(productId, reviewId, "Author " + reviewId, "Subject " + reviewId, "Content " + reviewId, "SA");
 		return client.post()
-				.uri("/review")
+				.uri("/reviews")
 				.body(just(review), Review.class)
 				.accept(APPLICATION_JSON)
 				.exchange()
@@ -144,7 +144,7 @@ class ReviewServiceApplicationTests extends MySqlTestBase {
 
 	private WebTestClient.BodyContentSpec deleteAndVerifyReviewsByProductId(int productId, HttpStatus expectedStatus) {
 		return client.delete()
-				.uri("/review?productId=" + productId)
+				.uri("/reviews?productId=" + productId)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)

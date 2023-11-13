@@ -1,3 +1,4 @@
+mvn clean install
 cd product-composite-service
 docker build -t product-composite-service .
 cd ../product-service

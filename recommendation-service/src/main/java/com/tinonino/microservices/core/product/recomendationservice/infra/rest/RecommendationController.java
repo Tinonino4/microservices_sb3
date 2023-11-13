@@ -17,7 +17,7 @@ public interface RecommendationController {
      * @return A JSON representation of the newly created recommendation
      */
     @PostMapping(
-            value    = "/recommendation",
+            value    = "/recommendations",
             consumes = "application/json",
             produces = "application/json")
     Recommendation createRecommendation(@RequestBody Recommendation body);
@@ -29,7 +29,7 @@ public interface RecommendationController {
      * @return the recommendations of the product
      */
     @GetMapping(
-            value = "/recommendation",
+            value = "/recommendations",
             produces = "application/json")
     List<Recommendation> getRecommendations(
             @RequestParam(value = "productId", required = true) int productId);
@@ -39,6 +39,6 @@ public interface RecommendationController {
      *
      * @param productId Id of the product
      */
-    @DeleteMapping(value = "/recommendation")
+    @DeleteMapping(value = "/recommendations")
     void deleteRecommendations(@RequestParam(value = "productId", required = true)  int productId);
 }

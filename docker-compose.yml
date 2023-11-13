@@ -2,23 +2,31 @@ version: '2.1'
 
 services:
   product:
-    build:
-      context: ./product-service
+    build: product-service
     mem_limit: 512m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   recommendation:
-    build: recommendation-service
+    build: ./recommendation-service
     mem_limit: 512m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   review:
     build: review-service
     mem_limit: 512m
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   product-composite:
     build: product-composite-service
@@ -33,7 +41,7 @@ services:
     mem_limit: 512m
     ports:
       - "27017:27017"
-    command: mongod
+    command: mongod --quiet
     healthcheck:
       test: "mongostat -n 1"
       interval: 5s
@@ -41,7 +49,7 @@ services:
       retries: 60
 
   mysql:
-    image: mysql:8.0.32
+    image: mysql:8.0.33
     mem_limit: 512m
     ports:
       - "3306:3306"

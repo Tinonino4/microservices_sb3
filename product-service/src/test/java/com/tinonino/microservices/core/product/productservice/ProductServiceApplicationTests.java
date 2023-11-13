@@ -46,7 +46,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 		assertTrue(repository.findByProductId(productId).isPresent());
 
 		postAndVerifyProduct(productId, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/product")
+				.jsonPath("$.path").isEqualTo("/products")
 				.jsonPath("$.message").isEqualTo("Duplicate key, Product Id: " + productId);
 	}
 
@@ -68,16 +68,15 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 	void getProductInvalidParameterString() {
 
 		getAndVerifyProduct("/no-integer", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/product/no-integer")
+				.jsonPath("$.path").isEqualTo("/products/no-integer")
 				.jsonPath("$.message").isEqualTo("Type mismatch.");
 	}
 
 	@Test
 	void getProductNotFound() {
-
 		int productIdNotFound = 13;
 		getAndVerifyProduct(productIdNotFound, NOT_FOUND)
-				.jsonPath("$.path").isEqualTo("/product/" + productIdNotFound)
+				.jsonPath("$.path").isEqualTo("/products/" + productIdNotFound)
 				.jsonPath("$.message").isEqualTo("No product found for productId: " + productIdNotFound);
 	}
 
@@ -87,7 +86,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 		int productIdInvalid = -1;
 
 		getAndVerifyProduct(productIdInvalid, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/product/" + productIdInvalid)
+				.jsonPath("$.path").isEqualTo("/products/" + productIdInvalid)
 				.jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
 	}
 
@@ -97,7 +96,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 
 	private WebTestClient.BodyContentSpec getAndVerifyProduct(String productIdPath, HttpStatus expectedStatus) {
 		return client.get()
-				.uri("/product" + productIdPath)
+				.uri("/products" + productIdPath)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)
@@ -108,7 +107,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 	private WebTestClient.BodyContentSpec postAndVerifyProduct(int productId, HttpStatus expectedStatus) {
 		Product product = new Product(productId, "Name " + productId, productId, "SA");
 		return client.post()
-				.uri("/product")
+				.uri("/products")
 				.body(just(product), Product.class)
 				.accept(APPLICATION_JSON)
 				.exchange()
@@ -119,7 +118,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 
 	private WebTestClient.BodyContentSpec deleteAndVerifyProduct(int productId, HttpStatus expectedStatus) {
 		return client.delete()
-				.uri("/product/" + productId)
+				.uri("/products/" + productId)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)

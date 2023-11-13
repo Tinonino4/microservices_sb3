@@ -15,7 +15,7 @@ public interface ProductController {
      * @return A JSON representation of the newly created product
      */
     @PostMapping(
-            value    = "/product",
+            value    = "/products",
             consumes = "application/json",
             produces = "application/json")
     Product createProduct(@RequestBody Product body);
@@ -27,7 +27,7 @@ public interface ProductController {
      * @return the product, if found, else null
      */
     @GetMapping(
-            value = "/product/{productId}",
+            value = "/products/{productId}",
             produces = "application/json")
     Product getProduct(@PathVariable int productId);
 
@@ -36,6 +36,6 @@ public interface ProductController {
      *
      * @param productId Id of the product
      */
-    @DeleteMapping(value = "/product/{productId}")
+    @DeleteMapping(value = "/products/{productId}")
     void deleteProduct(@PathVariable int productId);
 }
