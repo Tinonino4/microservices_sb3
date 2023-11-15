@@ -2,6 +2,7 @@ package com.tinonino.microservices.core.product.productservice.infra.rest;
 
 import com.tinonino.microservices.core.product.productservice.domain.Product;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 public interface ProductController {
     /**
@@ -18,7 +19,7 @@ public interface ProductController {
             value    = "/products",
             consumes = "application/json",
             produces = "application/json")
-    Product createProduct(@RequestBody Product body);
+    Mono<Product> createProduct(@RequestBody Product body);
 
     /**
      * Sample usage: "curl $HOST:$PORT/product/1".
@@ -29,7 +30,7 @@ public interface ProductController {
     @GetMapping(
             value = "/products/{productId}",
             produces = "application/json")
-    Product getProduct(@PathVariable int productId);
+    Mono<Product> getProduct(@PathVariable int productId);
 
     /**
      * Sample usage: "curl -X DELETE $HOST:$PORT/product/1".
@@ -37,5 +38,5 @@ public interface ProductController {
      * @param productId Id of the product
      */
     @DeleteMapping(value = "/products/{productId}")
-    void deleteProduct(@PathVariable int productId);
+    Mono<Void> deleteProduct(@PathVariable int productId);
 }
