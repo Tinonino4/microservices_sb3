@@ -5,6 +5,8 @@ import com.tinonino.microservices.core.product.recomendationservice.infra.rest.R
 import com.tinonino.microservices.core.product.recomendationservice.usecase.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -18,17 +20,17 @@ public class RecommendationControllerImpl implements RecommendationController {
     }
 
     @Override
-    public Recommendation createRecommendation(Recommendation body) {
+    public Mono<Recommendation> createRecommendation(Recommendation body) {
         return recommendationService.createRecommendation(body);
     }
 
     @Override
-    public List<Recommendation> getRecommendations(int productId) {
+    public Flux<Recommendation> getRecommendations(int productId) {
         return recommendationService.getRecommendationsByProductId(productId);
     }
 
     @Override
-    public void deleteRecommendations(int productId) {
-        recommendationService.deleteRecommendations(productId);
+    public Mono<Void> deleteRecommendations(int productId) {
+        return recommendationService.deleteRecommendations(productId);
     }
 }

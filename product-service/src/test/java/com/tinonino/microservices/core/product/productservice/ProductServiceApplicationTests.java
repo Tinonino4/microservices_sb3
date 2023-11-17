@@ -41,7 +41,6 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 
 	@Test
 	void getProductById() {
-
 		int productId = 1;
 
 		assertNull(repository.findByProductId(productId).block());
@@ -92,7 +91,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 	void getProductInvalidParameterString() {
 
 		getAndVerifyProduct("/no-integer", BAD_REQUEST)
-				.jsonPath("$.path").isEqualTo("/product/no-integer")
+				.jsonPath("$.path").isEqualTo("/products/no-integer")
 				.jsonPath("$.message").isEqualTo("Type mismatch.");
 	}
 
@@ -101,7 +100,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 
 		int productIdNotFound = 13;
 		getAndVerifyProduct(productIdNotFound, NOT_FOUND)
-				.jsonPath("$.path").isEqualTo("/product/" + productIdNotFound)
+				.jsonPath("$.path").isEqualTo("/products/" + productIdNotFound)
 				.jsonPath("$.message").isEqualTo("No product found for productId: " + productIdNotFound);
 	}
 
@@ -111,7 +110,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 		int productIdInvalid = -1;
 
 		getAndVerifyProduct(productIdInvalid, UNPROCESSABLE_ENTITY)
-				.jsonPath("$.path").isEqualTo("/product/" + productIdInvalid)
+				.jsonPath("$.path").isEqualTo("/products/" + productIdInvalid)
 				.jsonPath("$.message").isEqualTo("Invalid productId: " + productIdInvalid);
 	}
 
@@ -121,7 +120,7 @@ class ProductServiceApplicationTests extends MongoDbTestBase {
 
 	private WebTestClient.BodyContentSpec getAndVerifyProduct(String productIdPath, HttpStatus expectedStatus) {
 		return client.get()
-				.uri("/product" + productIdPath)
+				.uri("/products" + productIdPath)
 				.accept(APPLICATION_JSON)
 				.exchange()
 				.expectStatus().isEqualTo(expectedStatus)

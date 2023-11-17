@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class MapperTest {
 
-    private RecommendationMapper mapper = new RecommendationMapper();
+    private final RecommendationMapper mapper = new RecommendationMapper();
 
     @Test
     void mapperTests() {
@@ -21,7 +21,7 @@ class MapperTest {
 
         Recommendation api = new Recommendation(1, 2, "a", 4, "C", "adr");
 
-        RecommendationEntity entity = mapper.apiToEntity(api);
+        RecommendationEntity entity = RecommendationMapper.apiToEntity(api);
 
         assertEquals(api.getProductId(), entity.getProductId());
         assertEquals(api.getRecommendationId(), entity.getRecommendationId());
@@ -29,7 +29,7 @@ class MapperTest {
         assertEquals(api.getRate(), entity.getRating());
         assertEquals(api.getContent(), entity.getContent());
 
-        Recommendation api2 = mapper.entityToApi(entity);
+        Recommendation api2 = RecommendationMapper.entityToApi(entity);
 
         assertEquals(api.getProductId(), api2.getProductId());
         assertEquals(api.getRecommendationId(), api2.getRecommendationId());
@@ -47,7 +47,7 @@ class MapperTest {
         Recommendation api = new Recommendation(1, 2, "a", 4, "C", "adr");
         List<Recommendation> apiList = Collections.singletonList(api);
 
-        List<RecommendationEntity> entityList = mapper.apiListToEntityList(apiList);
+        List<RecommendationEntity> entityList = RecommendationMapper.apiListToEntityList(apiList);
         assertEquals(apiList.size(), entityList.size());
 
         RecommendationEntity entity = entityList.get(0);
@@ -58,7 +58,7 @@ class MapperTest {
         assertEquals(api.getRate(), entity.getRating());
         assertEquals(api.getContent(), entity.getContent());
 
-        List<Recommendation> api2List = mapper.entityListToApiList(entityList);
+        List<Recommendation> api2List = RecommendationMapper.entityListToApiList(entityList);
         assertEquals(apiList.size(), api2List.size());
 
         Recommendation api2 = api2List.get(0);

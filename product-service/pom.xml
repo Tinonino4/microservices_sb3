@@ -47,13 +47,6 @@
 			<artifactId>spring-cloud-starter-stream-kafka</artifactId>
 		</dependency>
 
-		<!-- Netty resolver for Apple silicon -->
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-resolver-dns-native-macos</artifactId>
-			<classifier>osx-aarch_64</classifier>
-		</dependency>
-
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

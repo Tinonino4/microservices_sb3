@@ -2,10 +2,9 @@ package com.tinonino.microservices.core.product.recomendationservice.infra.store
 
 import com.tinonino.microservices.core.product.recomendationservice.infra.store.entity.RecommendationEntity;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 
 public interface RecommendationRepository extends ReactiveCrudRepository<RecommendationEntity, String> {
-    List<RecommendationEntity> findByProductId(int productId);
+    Flux<RecommendationEntity> findByProductId(int productId);
 }
