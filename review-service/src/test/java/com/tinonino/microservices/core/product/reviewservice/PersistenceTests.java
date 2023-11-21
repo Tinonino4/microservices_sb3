@@ -31,17 +31,14 @@ class PersistenceTests extends MySqlTestBase {
     @BeforeEach
     void setupDb() {
         repository.deleteAll();
-
         ReviewEntity entity = new ReviewEntity(1, 2, "a", "s", "c");
         savedEntity = repository.save(entity);
-
         assertEqualsReview(entity, savedEntity);
     }
 
 
     @Test
     void create() {
-
         ReviewEntity newEntity = new ReviewEntity(1, 3, "a", "s", "c");
         repository.save(newEntity);
 
@@ -86,7 +83,6 @@ class PersistenceTests extends MySqlTestBase {
 
     @Test
     void optimisticLockError() {
-
         // Store the saved entity in two separate entity objects
         ReviewEntity entity1 = repository.findById(savedEntity.getId()).get();
         ReviewEntity entity2 = repository.findById(savedEntity.getId()).get();

@@ -5,8 +5,8 @@ import com.tinonino.microservices.core.product.reviewservice.infra.rest.ReviewCo
 import com.tinonino.microservices.core.product.reviewservice.usecase.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class ReviewControllerImpl implements ReviewController {
@@ -19,17 +19,17 @@ public class ReviewControllerImpl implements ReviewController {
     }
 
     @Override
-    public Review createReview(Review review) {
+    public Mono<Review> createReview(Review review) {
         return reviewService.createReview(review);
     }
 
     @Override
-    public List<Review> getReviews(int productId) {
+    public Flux<Review> getReviews(int productId) {
         return reviewService.getReviewsByProductId(productId);
     }
 
     @Override
-    public void deleteReviews(int productId) {
-        reviewService.deleteReviews(productId);
+    public Mono<Void> deleteReviews(int productId) {
+        return reviewService.deleteReviews(productId);
     }
 }
