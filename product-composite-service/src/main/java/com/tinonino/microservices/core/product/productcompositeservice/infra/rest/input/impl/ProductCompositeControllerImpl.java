@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 public class ProductCompositeControllerImpl implements ProductCompositeController {
@@ -19,17 +20,17 @@ public class ProductCompositeControllerImpl implements ProductCompositeControlle
     }
 
     @Override
-    public void createProduct(ProductAggregate productAggregate) {
-        productCompositeService.createProduct(productAggregate);
+    public Mono<Void> createProduct(ProductAggregate productAggregate) {
+        return productCompositeService.createProduct(productAggregate);
     }
 
     @Override
-    public ProductAggregate getProduct(int productId) {
+    public Mono<ProductAggregate> getProduct(int productId) {
         return productCompositeService.getProduct(productId);
     }
 
     @Override
-    public void deleteProduct(int productId) {
-        productCompositeService.deleteProduct(productId);
+    public Mono<Void> deleteProduct(int productId) {
+        return productCompositeService.deleteProduct(productId);
     }
 }

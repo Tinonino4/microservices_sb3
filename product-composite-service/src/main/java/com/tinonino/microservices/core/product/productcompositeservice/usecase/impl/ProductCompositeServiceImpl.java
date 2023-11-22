@@ -17,14 +17,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.logging.Level.FINE;
 
 @Service
 public class ProductCompositeServiceImpl implements ProductCompositeService {
     private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeServiceImpl.class);
-
     private final ServiceUtil serviceUtil;
     private final ProductFacade productFacade;
     private final RecommendationFacade recommendationFacade;
@@ -43,52 +46,66 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public void createProduct(ProductAggregate productAggregate) {
+    public Mono<Void> createProduct(ProductAggregate productAggregate) {
         try {
-            LOG.debug("createCompositeProduct: creates a new composite entity for productId: {}", productAggregate.getProductId());
-            Product product = new Product(productAggregate.getProductId(), productAggregate.getName(), productAggregate.getWeight(), null);
-            productFacade.createProduct(product);
+            List<Mono> monoList = new ArrayList<>();
+            LOG.info("Will create a new composite entity for product.id: {}", productAggregate.getProductId());
 
+            Product product = new Product(productAggregate.getProductId(), productAggregate.getName(), productAggregate.getWeight(), null);
+            monoList.add(productFacade.createProduct(product));
             if (productAggregate.getRecommendations() != null) {
                 productAggregate.getRecommendations().forEach(r -> {
                     Recommendation recommendation = new Recommendation(productAggregate.getProductId(), r.getRecommendationId(), r.getAuthor(), r.getRate(), r.getContent(), null);
-                    recommendationFacade.createRecommendation(recommendation);
+                    monoList.add(recommendationFacade.createRecommendation(recommendation));
                 });
             }
 
             if (productAggregate.getReviews() != null) {
                 productAggregate.getReviews().forEach(r -> {
                     Review review = new Review(productAggregate.getProductId(), r.getReviewId(), r.getAuthor(), r.getSubject(), r.getContent(), null);
-                    reviewFacade.createReview(review);
+                    monoList.add(reviewFacade.createReview(review));
                 });
             }
 
             LOG.debug("createCompositeProduct: composite entities created for productId: {}", productAggregate.getProductId());
 
+            return Mono.zip(r -> "", monoList.toArray(new Mono[0]))
+                    .doOnError(ex -> LOG.warn("createCompositeProduct failed: {}", ex.toString()))
+                    .then();
+
         } catch (RuntimeException re) {
-            LOG.warn("createCompositeProduct failed", re);
+            LOG.warn("createCompositeProduct failed: {}", re.toString());
             throw re;
         }
     }
 
     @Override
-    public ProductAggregate getProduct(int productId) {
-        Product product = productFacade.getProduct(productId);
-        if (product == null) {
-            throw new ProductNotFoundException("No product found for productId: " + productId);
-        }
-        List<Recommendation> recommendations = recommendationFacade.getRecommendations(productId);
-        List<Review> reviews = reviewFacade.getReviews(productId);
-        return createProductAggregate(product, recommendations, reviews, serviceUtil.getServiceAddress());
+    public Mono<ProductAggregate> getProduct(int productId) {
+        LOG.info("Will get composite product info for product.id={}", productId);
+        return Mono.zip(
+            values -> createProductAggregate((Product) values[0], (List<Recommendation>) values[1], (List<Review>) values[2], serviceUtil.getServiceAddress()),
+            productFacade.getProduct(productId),
+            recommendationFacade.getRecommendations(productId).collectList(),
+            reviewFacade.getReviews(productId).collectList())
+        .doOnError(ex -> LOG.warn("getCompositeProduct failed: {}", ex.toString()))
+        .log(LOG.getName(), FINE);
     }
 
     @Override
-    public void deleteProduct(int productId) {
-        LOG.debug("deleteCompositeProduct: Deletes a product aggregate for productId: {}", productId);
-        productFacade.deleteProduct(productId);
-        recommendationFacade.deleteRecommendations(productId);
-        reviewFacade.deleteReviews(productId);
-        LOG.debug("deleteCompositeProduct: aggregate entities deleted for productId: {}", productId);
+    public Mono<Void> deleteProduct(int productId) {
+        try {
+            LOG.info("Will delete a product aggregate for product.id: {}", productId);
+            return Mono.zip(
+                r -> "",
+                productFacade.deleteProduct(productId),
+                recommendationFacade.deleteRecommendations(productId),
+                reviewFacade.deleteReviews(productId))
+            .doOnError(ex -> LOG.warn("delete failed: {}", ex.toString()))
+            .log(LOG.getName(), FINE).then();
+        } catch (RuntimeException re) {
+            LOG.warn("deleteCompositeProduct failed: {}", re.toString());
+            throw re;
+        }
     }
 
     private ProductAggregate createProductAggregate(
@@ -112,9 +129,9 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
                         .collect(Collectors.toList());
         // 4. Create info regarding the involved microservices addresses
         String productAddress = product.getServiceAddress();
-        String reviewAddress = (reviews != null && reviews.size() > 0) ? reviews.get(0).serviceAddress() : "";
+        String reviewAddress = (reviews != null && !reviews.isEmpty()) ? reviews.get(0).serviceAddress() : "";
         String recommendationAddress =
-                (recommendations != null && recommendations.size() > 0) ? recommendations.get(0).serviceAddress() : "";
+                (recommendations != null && !recommendations.isEmpty()) ? recommendations.get(0).serviceAddress() : "";
         ServiceAddresses serviceAddresses =
                 new ServiceAddresses(serviceAddress, productAddress, reviewAddress, recommendationAddress);
 

@@ -1,6 +1,7 @@
 package com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tinonino.microservices.core.product.productcompositeservice.domain.Event;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.entities.Product;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.exception.InvalidInputException;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.exception.ProductNotFoundException;
@@ -8,100 +9,108 @@ import com.tinonino.microservices.core.utils.http.HttpErrorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 
 import java.io.IOException;
 import java.util.Objects;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.NOT_FOUND;
+import static com.tinonino.microservices.core.product.productcompositeservice.domain.Event.Type.CREATE;
+import static com.tinonino.microservices.core.product.productcompositeservice.domain.Event.Type.DELETE;
+import static java.util.logging.Level.FINE;
 
 @Component
 public class ProductFacade {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProductFacade.class);
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final ObjectMapper mapper;
     private final String productServiceUrl;
+    private final StreamBridge streamBridge;
+    private final Scheduler publishEventScheduler;
 
     @Autowired
     public ProductFacade(
-            RestTemplate restTemplate,
+            @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
+            WebClient.Builder webClient,
             ObjectMapper mapper,
+            StreamBridge streamBridge,
             @Value("${app.product-service.host}") String productServiceHost,
             @Value("${app.product-service.port}") int productServicePort
     ) {
-        this.restTemplate = restTemplate;
+        this.publishEventScheduler = publishEventScheduler;
+        this.webClient = webClient.build();
         this.mapper = mapper;
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort + "/products";
+        this.streamBridge = streamBridge;
+        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort;
     }
 
-    public Product getProduct(int productId) {
-        try {
-            String url = productServiceUrl + "/" + productId;
-            LOG.debug("Will call getProduct API on URL: {}", url);
+    public Mono<Product> getProduct(int productId) {
+        String url = productServiceUrl + "/products/" + productId;
+        LOG.debug("Will call the getProduct API on URL: {}", url);
 
-            Product product = restTemplate.getForObject(url, Product.class);
-            LOG.debug("Found a product with id: {}", product.getProductId());
+        return webClient.get().uri(url).retrieve().bodyToMono(Product.class).log(LOG.getName(), FINE).onErrorMap(WebClientResponseException.class, ex -> handleException(ex));
 
-            return product;
+    }
+    public Mono<Product> createProduct(Product body) {
+        return Mono.fromCallable(() -> {
+            sendMessage("products-out-0", new Event(CREATE, body.getProductId(), body));
+            return body;
+        }).subscribeOn(publishEventScheduler);
+    }
 
-        } catch (HttpClientErrorException ex) {
+    public Mono<Void> deleteProduct(int productId) {
+        return Mono.fromRunnable(() -> sendMessage("products-out-0", new Event(DELETE, productId, null)))
+                .subscribeOn(publishEventScheduler).then();
+    }
 
-            switch (HttpStatus.resolve(ex.getStatusCode().value())) {
-                case NOT_FOUND:
-                    throw new ProductNotFoundException(getErrorMessage(ex));
+    private void sendMessage(String bindingName, Event event) {
+        LOG.debug("Sending a {} message to {}", event.getEventType(), bindingName);
+        Message message = MessageBuilder.withPayload(event)
+                .setHeader("partitionKey", event.getKey())
+                .build();
+        streamBridge.send(bindingName, message);
+    }
 
-                case UNPROCESSABLE_ENTITY:
-                    throw new InvalidInputException(getErrorMessage(ex));
+    public Mono<Health> getProductHealth() {
+        String url = productServiceUrl + "/actuator/health";
+        LOG.debug("Will call the Health API on URL: {}", url);
+        return webClient.get().uri(url).retrieve().bodyToMono(String.class)
+                .map(s -> new Health.Builder().up().build())
+                .onErrorResume(ex -> Mono.just(new Health.Builder().down(ex).build()))
+                .log(LOG.getName(), FINE);
+    }
 
-                default:
-                    LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
-                    LOG.warn("Error body: {}", ex.getResponseBodyAsString());
-                    throw ex;
-            }
+    private Throwable handleException(Throwable ex) {
+        if (!(ex instanceof WebClientResponseException)) {
+            LOG.warn("Got a unexpected error: {}, will rethrow it", ex.toString());
+            return ex;
         }
-    }
-    public Product createProduct(Product body) {
-
-        try {
-            String url = productServiceUrl;
-            LOG.debug("Will post a new product to URL: {}", url);
-            Product product = restTemplate.postForObject(url, body, Product.class);
-            LOG.debug("Created a product with id: {}", product.getProductId());
-            return product;
-        } catch (HttpClientErrorException ex) {
-            throw handleHttpClientException(ex);
-        }
-    }
-
-    public void deleteProduct(int productId) {
-        try {
-            String url = productServiceUrl + "/" + productId;
-            LOG.debug("Will call the deleteProduct API on URL: {}", url);
-            restTemplate.delete(url);
-        } catch (HttpClientErrorException ex) {
-            throw handleHttpClientException(ex);
-        }
-    }
-
-    private RuntimeException handleHttpClientException(HttpClientErrorException ex) {
-        switch (Objects.requireNonNull(HttpStatus.resolve(ex.getStatusCode().value()))) {
+        WebClientResponseException wcre = (WebClientResponseException)ex;
+        switch (Objects.requireNonNull(HttpStatus.resolve(wcre.getStatusCode().value()))) {
             case NOT_FOUND:
-                return new ProductNotFoundException(getErrorMessage(ex));
+                return new ProductNotFoundException(getErrorMessage(wcre));
+
             case UNPROCESSABLE_ENTITY:
-                return new InvalidInputException(getErrorMessage(ex));
+                return new InvalidInputException(getErrorMessage(wcre));
 
             default:
-                LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", ex.getStatusCode());
-                LOG.warn("Error body: {}", ex.getResponseBodyAsString());
+                LOG.warn("Got an unexpected HTTP error: {}, will rethrow it", wcre.getStatusCode());
+                LOG.warn("Error body: {}", wcre.getResponseBodyAsString());
                 return ex;
         }
     }
-    private String getErrorMessage(HttpClientErrorException ex) {
+    private String getErrorMessage(WebClientResponseException ex) {
         try {
             return mapper.readValue(ex.getResponseBodyAsString(), HttpErrorInfo.class).message();
         } catch (IOException ioex) {
