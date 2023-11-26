@@ -15,6 +15,7 @@
         <module>recommendation-service</module>
         <module>review-service</module>
         <module>utils</module>
+        <module>eureka-server</module>
     </modules>
 
     <name>microservices</name>
