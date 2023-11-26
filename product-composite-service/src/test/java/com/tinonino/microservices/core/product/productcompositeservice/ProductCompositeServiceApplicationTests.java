@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.when;
@@ -96,5 +97,16 @@ class ProductCompositeServiceApplicationTests {
 				.expectStatus().isEqualTo(expectedStatus)
 				.expectHeader().contentType(APPLICATION_JSON)
 				.expectBody();
+	}
+
+
+	@Test
+	void testStepVerifier() {
+		StepVerifier.create(Flux.just(1,2,3,4)
+				.filter(n -> n % 2 == 0)
+				.map(n -> n * 2)
+				.log())
+				.expectNext(4, 8)
+				.verifyComplete();
 	}
 }
