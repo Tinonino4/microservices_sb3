@@ -25,7 +25,8 @@ import static reactor.core.publisher.Mono.just;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT, properties = {
 		"spring.cloud.stream.defaultBinder=rabbit",
-		"logging.level.com.tinonino=DEBUG"})
+		"logging.level.com.tinonino=DEBUG",
+		"eureka.client.enabled=false"})
 class ReviewServiceApplicationTests extends MySqlTestBase {
 	@Autowired
 	private WebTestClient client;

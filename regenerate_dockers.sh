@@ -7,5 +7,6 @@ cd ../recommentadion-service
 docker build -t recommendation-service .
 cd ../review-service
 docker build -t review-service .
-cd ..
+cd ../eureka-server
+docker build -t eureka-server .
 docker compose build

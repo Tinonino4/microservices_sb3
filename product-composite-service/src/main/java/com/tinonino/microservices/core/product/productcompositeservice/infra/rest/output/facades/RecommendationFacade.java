@@ -38,9 +38,9 @@ import java.util.Objects;
 @Component
 public class RecommendationFacade {
     private static final Logger LOG = LoggerFactory.getLogger(RecommendationFacade.class);
+    private final String recommendationServiceUrl= "http://recommendation";;
     private final WebClient webClient;
     private final ObjectMapper mapper;
-    private final String recommendationServiceUrl;
     private final StreamBridge streamBridge;
     private final Scheduler publishEventScheduler;
 
@@ -49,16 +49,11 @@ public class RecommendationFacade {
             @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
             WebClient.Builder webClient,
             ObjectMapper mapper,
-            StreamBridge streamBridge,
-            @Value("${app.recommendation-service.host}") String recommendationServiceHost,
-            @Value("${app.recommendation-service.port}") int recommendationServicePort
-    ) {
+            StreamBridge streamBridge) {
         this.publishEventScheduler = publishEventScheduler;
         this.webClient = webClient.build();
         this.mapper = mapper;
         this.streamBridge = streamBridge;
-        recommendationServiceUrl =
-                "http://" + recommendationServiceHost + ":" + recommendationServicePort;
     }
 
     public Mono<Recommendation> createRecommendation(Recommendation recommendation) {

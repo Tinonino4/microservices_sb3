@@ -35,7 +35,7 @@ public class ProductFacade {
     private static final Logger LOG = LoggerFactory.getLogger(ProductFacade.class);
     private final WebClient webClient;
     private final ObjectMapper mapper;
-    private final String productServiceUrl;
+    private final String productServiceUrl = "http://product";
     private final StreamBridge streamBridge;
     private final Scheduler publishEventScheduler;
 
@@ -44,15 +44,11 @@ public class ProductFacade {
             @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
             WebClient.Builder webClient,
             ObjectMapper mapper,
-            StreamBridge streamBridge,
-            @Value("${app.product-service.host}") String productServiceHost,
-            @Value("${app.product-service.port}") int productServicePort
-    ) {
+            StreamBridge streamBridge) {
         this.publishEventScheduler = publishEventScheduler;
         this.webClient = webClient.build();
         this.mapper = mapper;
         this.streamBridge = streamBridge;
-        productServiceUrl = "http://" + productServiceHost + ":" + productServicePort;
     }
 
     public Mono<Product> getProduct(int productId) {

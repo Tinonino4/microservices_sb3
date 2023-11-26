@@ -40,9 +40,9 @@ import static reactor.core.publisher.Flux.empty;
 @Component
 public class ReviewFacade {
     private static final Logger LOG = LoggerFactory.getLogger(ReviewFacade.class);
+    private final String reviewServiceUrl = "http://review";
     private final WebClient webClient;
     private final ObjectMapper mapper;
-    private final String reviewServiceUrl;
     private final StreamBridge streamBridge;
     private final Scheduler publishEventScheduler;
 
@@ -52,15 +52,11 @@ public class ReviewFacade {
             @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
             WebClient.Builder webClient,
             ObjectMapper mapper,
-            StreamBridge streamBridge,
-            @Value("${app.review-service.host}") String reviewServiceHost,
-            @Value("${app.review-service.port}") int reviewServicePort
-    ) {
+            StreamBridge streamBridge) {
         this.publishEventScheduler = publishEventScheduler;
         this.webClient = webClient.build();
-       this.mapper = mapper;
+        this.mapper = mapper;
         this.streamBridge = streamBridge;
-        reviewServiceUrl = "http://" + reviewServiceHost + ":" + reviewServicePort;
     }
 
     public Mono<Review> createReview(Review review) {
