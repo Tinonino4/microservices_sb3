@@ -60,3 +60,4 @@ docker-compose exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 docker-compose exec kafka kafka-topics --bootstrap-server localhost:9092 --describe --topic products
 docker-compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic products --from-beginning --timeout-ms 1000 --partition 1
 
+EUREKA:http://localhost:8761/

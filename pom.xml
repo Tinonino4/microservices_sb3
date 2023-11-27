@@ -16,6 +16,7 @@
         <module>review-service</module>
         <module>utils</module>
         <module>eureka-server</module>
+        <module>gateway</module>
     </modules>
 
     <name>microservices</name>

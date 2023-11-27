@@ -3,8 +3,12 @@ springdoc:
   api-docs.path: /openapi/v3/api-docs
   packagesToScan: se.magnus.microservices.composite.product
   pathsToMatch: /**
+  cache.disabled: true
+
+server.forward-headers-strategy: framework
 
 api:
+
   common:
     version: 1.0.0
     title: Sample API
@@ -12,6 +16,7 @@ api:
     termsOfService: MY TERMS OF SERVICE
     license: MY LICENSE
     licenseUrl: MY LICENSE URL
+
     externalDocDesc: MY WIKI PAGE
     externalDocUrl: MY WIKI URL
     contact:
@@ -26,6 +31,7 @@ api:
     unprocessableEntity.description: Unprocessable entity, input parameters caused the processing to fail. See response message for more information
 
   product-composite:
+
     get-composite-product:
       description: Returns a composite view of the specified product id
       notes: |
@@ -63,6 +69,7 @@ server.port: 7000
 server.error.include-message: always
 
 spring.application.name: product-composite
+
 app.eureka-server: localhost
 
 eureka:
@@ -105,7 +112,7 @@ spring.rabbitmq:
 logging:
   level:
     root: INFO
-    com.tinonino: DEBUG
+    se.magnus: DEBUG
 
 management.endpoint.health.show-details: "ALWAYS"
 management.endpoints.web.exposure.include: "*"

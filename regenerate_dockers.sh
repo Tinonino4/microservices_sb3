@@ -9,4 +9,7 @@ cd ../review-service
 docker build -t review-service .
 cd ../eureka-server
 docker build -t eureka-server .
+cd ../gateway
+docker build -t gateway
+cd ..
 docker compose build
