@@ -17,6 +17,7 @@
         <module>utils</module>
         <module>eureka-server</module>
         <module>gateway</module>
+        <module>authorization-server</module>
     </modules>
 
     <name>microservices</name>

@@ -11,10 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import static java.util.logging.Level.FINE;
 
 @Configuration
@@ -37,6 +35,7 @@ public class HealthCheckConfiguration {
         registry.put("recommendation",    () -> getHealth("http://recommendation"));
         registry.put("review",            () -> getHealth("http://review"));
         registry.put("product-composite", () -> getHealth("http://product-composite"));
+        registry.put("auth-server",       () -> getHealth("http://auth-server"));
 
         return CompositeReactiveHealthContributor.fromMap(registry);
     }

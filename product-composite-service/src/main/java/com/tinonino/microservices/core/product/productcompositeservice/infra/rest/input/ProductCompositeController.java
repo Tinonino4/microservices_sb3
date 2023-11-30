@@ -4,11 +4,13 @@ import com.tinonino.microservices.core.product.productcompositeservice.domain.Pr
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+@SecurityRequirement(name = "security_auth")
 @Tag(name = "ProductCompositeController", description = "RestAPI for composite product info.")
 public interface ProductCompositeController {
     /**
