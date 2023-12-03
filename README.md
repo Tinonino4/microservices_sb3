@@ -61,3 +61,34 @@ docker-compose exec kafka kafka-topics --bootstrap-server localhost:9092 --descr
 docker-compose exec kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic products --from-beginning --timeout-ms 1000 --partition 1
 
 EUREKA:http://localhost:8761/
+
+
+
+---
+Security things:
+
+Acquiring access tokens
+- Using the client credentials grant flow
+
+curl -k https://writer:secret-writer@localhost:8443/oauth2/token -d grant_type=client_credentials -d scope="product:read product:write" -s | jq
+curl -k https://reader:secret-reader@localhost:8443/oauth2/token -d grant_type=client_credentials -d scope="product:read" -s | jq
+
+Response:
+  NTEsInNjb3BlIjpbInByb2R1Y3Q6d3JpdGUiLCJwcm9kdWN0OnJlYWQiXSwiaXNzIjoiaHR0cDovL2F1dGgtc2VydmVyOjk5OTkiLCJleHAiOjE3MDE1MTg3NTEsImlhdCI6MTcwMTUxNTE1MX0.TSNMW_-gtUYONmelU73MamXlIHZMKKtWgkmHK3yTftAtIVckOMUpSk4pT-mv9YIViX6jDb6yXuzLF7kCE8MaFeg_T8TDJQYHfD4bejUaNGfcPG4T2M0Aay6Oa9w0i8-qZJJETgayaE6IQlAh1L20SZdnt6JfRh_r5wzQdTF0NMjckVgSUpVQIYAR7ZowBT4X8_brQp1n6QwnCVcJfqGLDBvoEBPwA7bD-2o1N-puIeoL8-aTXEyZPJKx46NiMFWZABTQ6FuiyYSXokQ92J2-NVnOaWKVzmXUYFaTcxQL_vCtj2sZPUR8boBef_XdaDlAhPtyBEYLlPJJKp6n2TVy-A",
+  "scope": "product:write product:read",
+  "token_type": "Bearer",
+  "expires_in": 3599
+  }
+
+- Using the authorization code grant flow
+1. Go to the url: https://localhost:8443/oauth2/authorize?response_type=code&client_id=reader&redirect_uri=https://my.redirect.uri&scope=product:read&state=35725
+2. curl -k https://reader:secret-reader@localhost:8443/oauth2/token \
+-d grant_type=authorization_code \
+-d client_id=reader \
+-d redirect_uri=https://my.redirect.uri \
+-d code=$CODE -s | jq .
+
+
+- Calling protected APIs using access tokens
+ACCESS_TOKEN=an-invalid-token
+curl https://localhost:8443/product-composite/1 -k -H"Authorization: Bearer $ACCESS_TOKEN" -i

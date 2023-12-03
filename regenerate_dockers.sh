@@ -1,17 +1,23 @@
-mvn clean install
 cd product-composite-service
+mvn clean install
 docker build -t product-composite-service .
 cd ../product-service
+mvn clean install
 docker build -t product-service .
-cd ../recommentadion-service
+cd ../recommendation-service
+mvn clean install
 docker build -t recommendation-service .
 cd ../review-service
+mvn clean install
 docker build -t review-service .
 cd ../eureka-server
+mvn clean install
 docker build -t eureka-server .
 cd ../gateway
+mvn clean install
 docker build -t gateway .
 cd ../authorization-server
+mvn clean install
 docker build -t authorization-server .
 cd ..
 docker-compose build
