@@ -19,5 +19,8 @@ docker build -t gateway .
 cd ../authorization-server
 mvn clean install
 docker build -t authorization-server .
+cd ../config-server
+mvn clean install
+docker build -t config-server .
 cd ..
 docker-compose build

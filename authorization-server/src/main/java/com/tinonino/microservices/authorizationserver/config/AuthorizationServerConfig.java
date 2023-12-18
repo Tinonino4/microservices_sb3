@@ -47,6 +47,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
  */
 @Configuration(proxyBeanMethods = false)
 public class AuthorizationServerConfig {
+
     private static final Logger LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
 
     @Bean
@@ -180,3 +181,4 @@ public class AuthorizationServerConfig {
         }
     }
 }
+//CHECKSTYLE:ON
