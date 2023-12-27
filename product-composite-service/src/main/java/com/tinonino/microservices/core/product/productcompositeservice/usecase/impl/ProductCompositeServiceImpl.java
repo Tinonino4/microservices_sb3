@@ -88,13 +88,13 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     }
 
     @Override
-    public Mono<ProductAggregate> getProduct(int productId) {
+    public Mono<ProductAggregate> getProduct(int productId, int delay, int faultPercent) {
         LOG.info("Will get composite product info for product.id={}", productId);
         return Mono.zip(
                         values -> createProductAggregate(
                                 (SecurityContext) values[0], (Product) values[1], (List<Recommendation>) values[2], (List<Review>) values[3], serviceUtil.getServiceAddress()),
                         getSecurityContextMono(),
-                        productFacade.getProduct(productId),
+                        productFacade.getProduct(productId, delay, faultPercent),
                         recommendationFacade.getRecommendations(productId).collectList(),
                         reviewFacade.getReviews(productId).collectList())
                 .doOnError(ex -> LOG.warn("getCompositeProduct failed: {}", ex.toString()))

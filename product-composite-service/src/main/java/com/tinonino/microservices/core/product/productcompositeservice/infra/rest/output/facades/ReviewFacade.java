@@ -22,11 +22,13 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -67,7 +69,7 @@ public class ReviewFacade {
         }).subscribeOn(publishEventScheduler);
     }
     public Flux<Review> getReviews(int productId) {
-        String url = reviewServiceUrl + "/reviews?productId=" + productId;
+        URI url = UriComponentsBuilder.fromUriString(reviewServiceUrl + "/reviews?productId={productId}").build(productId);
         LOG.debug("Will call the getReviews API on URL: {}", url);
         // Return an empty result if something goes wrong to make it possible for the composite service to return partial responses
         return webClient.get().uri(url).retrieve().bodyToFlux(Review.class).log(LOG.getName(), FINE).onErrorResume(error -> empty());

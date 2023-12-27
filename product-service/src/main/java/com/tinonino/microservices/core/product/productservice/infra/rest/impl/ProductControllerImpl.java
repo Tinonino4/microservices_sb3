@@ -27,9 +27,9 @@ public class ProductControllerImpl implements ProductController {
     }
 
     @Override
-    public Mono<Product> getProduct(int productId) {
+    public Mono<Product> getProduct(int productId, int delay, int faultPercent) {
         LOG.debug("/product return the found product for productId={}", productId);
-        return productServiceUseCase.getProduct(productId);
+        return productServiceUseCase.getProduct(productId, delay, faultPercent);
     }
 
     @Override

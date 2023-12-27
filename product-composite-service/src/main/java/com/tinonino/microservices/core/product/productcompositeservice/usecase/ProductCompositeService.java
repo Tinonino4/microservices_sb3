@@ -6,6 +6,6 @@ import reactor.core.publisher.Mono;
 public interface ProductCompositeService {
 
     Mono<Void> createProduct(ProductAggregate productAggregate);
-    Mono<ProductAggregate> getProduct(int productId);
+    Mono<ProductAggregate> getProduct(int productId, int delay, int faultPercent);
     Mono<Void> deleteProduct(int productId);
 }

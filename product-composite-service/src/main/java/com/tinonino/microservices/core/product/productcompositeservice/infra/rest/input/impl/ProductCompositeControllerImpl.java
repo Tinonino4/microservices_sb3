@@ -25,8 +25,8 @@ public class ProductCompositeControllerImpl implements ProductCompositeControlle
     }
 
     @Override
-    public Mono<ProductAggregate> getProduct(int productId) {
-        return productCompositeService.getProduct(productId);
+    public Mono<ProductAggregate> getProduct(int productId, int delay, int faultPercent) {
+        return productCompositeService.getProduct(productId, delay, faultPercent);
     }
 
     @Override

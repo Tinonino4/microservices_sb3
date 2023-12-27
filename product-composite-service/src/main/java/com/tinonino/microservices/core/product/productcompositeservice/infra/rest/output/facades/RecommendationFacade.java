@@ -28,11 +28,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Objects;
 
 @Component
@@ -65,7 +67,7 @@ public class RecommendationFacade {
     }
 
     public Flux<Recommendation> getRecommendations(int productId) {
-        String url = recommendationServiceUrl + "/recommendations?productId=" + productId;
+        URI url = UriComponentsBuilder.fromUriString(recommendationServiceUrl + "/recommendations?productId={productId}").build(productId);
         LOG.debug("Will call the getRecommendations API on URL: {}", url);
         // Return an empty result if something goes wrong to make it possible for the composite service to return partial responses
         return webClient.get().uri(url).retrieve().bodyToFlux(Recommendation.class).log(LOG.getName(), FINE).onErrorResume(error -> empty());

@@ -16,7 +16,11 @@ public interface ProductController {
     @GetMapping(
             value = "/products/{productId}",
             produces = "application/json")
-    Mono<Product> getProduct(@PathVariable int productId);
+    Mono<Product> getProduct(
+            @PathVariable int productId,
+            @RequestParam(value = "delay", required = false, defaultValue = "0") int delay,
+            @RequestParam(value = "faultPercent", required = false, defaultValue = "0") int faultPercent
+    );
 
     Mono<Void> deleteProduct(int productId);
 }

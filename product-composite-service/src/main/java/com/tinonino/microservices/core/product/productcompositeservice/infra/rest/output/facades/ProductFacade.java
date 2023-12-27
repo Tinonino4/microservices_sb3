@@ -1,6 +1,11 @@
 package com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tinonino.microservices.core.utils.http.ServiceUtil;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.Event;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.entities.Product;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.exception.InvalidInputException;
@@ -10,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.http.HttpStatus;
@@ -19,10 +23,12 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Objects;
 
 import static com.tinonino.microservices.core.product.productcompositeservice.domain.Event.Type.CREATE;
@@ -38,26 +44,49 @@ public class ProductFacade {
     private final String productServiceUrl = "http://product";
     private final StreamBridge streamBridge;
     private final Scheduler publishEventScheduler;
+    private final ServiceUtil serviceUtil;
 
     @Autowired
     public ProductFacade(
             @Qualifier("publishEventScheduler") Scheduler publishEventScheduler,
             WebClient.Builder webClient,
             ObjectMapper mapper,
-            StreamBridge streamBridge) {
+            StreamBridge streamBridge, ServiceUtil serviceUtil) {
         this.publishEventScheduler = publishEventScheduler;
         this.webClient = webClient.build();
         this.mapper = mapper;
         this.streamBridge = streamBridge;
+        this.serviceUtil = serviceUtil;
+    }
+   @Retry(name = "product")
+   @TimeLimiter(name = "product")
+   @CircuitBreaker(name = "product", fallbackMethod = "getProductFallbackValue")
+   public Mono<Product> getProduct(int productId, int delay, int faultPercent) {
+
+     URI url = UriComponentsBuilder.fromUriString(productServiceUrl
+             + "/products/{productId}?delay={delay}&faultPercent={faultPercent}")
+             .build(productId, delay, faultPercent);
+
+     return webClient.get().uri(url)
+             .retrieve().bodyToMono(Product.class)
+             .log(LOG.getName(), FINE)
+             .onErrorMap(WebClientResponseException.class, ex -> handleException(ex));
     }
 
-    public Mono<Product> getProduct(int productId) {
-        String url = productServiceUrl + "/products/" + productId;
-        LOG.debug("Will call the getProduct API on URL: {}", url);
+    private Mono<Product> getProductFallbackValue(int productId, int delay, int faultPercent, CallNotPermittedException ex) {
 
-        return webClient.get().uri(url).retrieve().bodyToMono(Product.class).log(LOG.getName(), FINE).onErrorMap(WebClientResponseException.class, ex -> handleException(ex));
+        LOG.warn("Creating a fail-fast fallback product for productId = {}, delay = {}, faultPercent = {} and exception = {} ",
+                productId, delay, faultPercent, ex.toString());
 
+        if (productId == 13) {
+            String errMsg = "Product Id: " + productId + " not found in fallback cache!";
+            LOG.warn(errMsg);
+            throw new ProductNotFoundException(errMsg);
+        }
+
+        return Mono.just(new Product(productId, "Fallback product" + productId, productId, serviceUtil.getServiceAddress()));
     }
+
     public Mono<Product> createProduct(Product body) {
         return Mono.fromCallable(() -> {
             sendMessage("products-out-0", new Event(CREATE, body.getProductId(), body));
