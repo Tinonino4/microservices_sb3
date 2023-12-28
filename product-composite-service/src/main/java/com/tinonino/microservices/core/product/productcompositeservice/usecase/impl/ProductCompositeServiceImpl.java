@@ -7,10 +7,11 @@ import com.tinonino.microservices.core.product.productcompositeservice.domain.Se
 import com.tinonino.microservices.core.product.productcompositeservice.domain.entities.Product;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.entities.Recommendation;
 import com.tinonino.microservices.core.product.productcompositeservice.domain.entities.Review;
-import com.tinonino.microservices.core.product.productcompositeservice.domain.exception.ProductNotFoundException;
+import java.util.function.Supplier;
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.ProductFacade;
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.RecommendationFacade;
 import com.tinonino.microservices.core.product.productcompositeservice.infra.rest.output.facades.ReviewFacade;
+import com.tinonino.microservices.core.product.productcompositeservice.tracing.ObservationUtil;
 import com.tinonino.microservices.core.product.productcompositeservice.usecase.ProductCompositeService;
 import com.tinonino.microservices.core.utils.http.ServiceUtil;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     private static final Logger LOG = LoggerFactory.getLogger(ProductCompositeServiceImpl.class);
     private final SecurityContext nullSecCtx = new SecurityContextImpl();
     private final ServiceUtil serviceUtil;
+    private final ObservationUtil observationUtil;
     private final ProductFacade productFacade;
     private final RecommendationFacade recommendationFacade;
     private final ReviewFacade reviewFacade;
@@ -43,39 +45,49 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
     @Autowired
     public ProductCompositeServiceImpl(
             ServiceUtil serviceUtil,
+            ObservationUtil observationUtil,
             ProductFacade productFacade,
             RecommendationFacade recommendationFacade,
             ReviewFacade reviewFacade) {
         this.serviceUtil = serviceUtil;
+        this.observationUtil = observationUtil;
         this.productFacade = productFacade;
         this.reviewFacade = reviewFacade;
         this.recommendationFacade = recommendationFacade;
     }
 
     @Override
-    public Mono<Void> createProduct(ProductAggregate productAggregate) {
-        try {
-            List<Mono> monoList = new ArrayList<>();
-            monoList.add(getLogAuthorizationInfoMono());
-            LOG.info("Will create a new composite entity for product.id: {}", productAggregate.getProductId());
+    public Mono<Void> createProduct(ProductAggregate body) {
+        return observationWithProductInfo(body.getProductId(), () -> createProductInternal(body));
+    }
 
-            Product product = new Product(productAggregate.getProductId(), productAggregate.getName(), productAggregate.getWeight(), null);
+    private Mono<Void> createProductInternal(ProductAggregate body) {
+        try {
+
+            List<Mono> monoList = new ArrayList<>();
+
+            monoList.add(getLogAuthorizationInfoMono());
+
+            LOG.info("Will create a new composite entity for product.id: {}", body.getProductId());
+
+            Product product = new Product(body.getProductId(), body.getName(), body.getWeight(), null);
             monoList.add(productFacade.createProduct(product));
-            if (productAggregate.getRecommendations() != null) {
-                productAggregate.getRecommendations().forEach(r -> {
-                    Recommendation recommendation = new Recommendation(productAggregate.getProductId(), r.getRecommendationId(), r.getAuthor(), r.getRate(), r.getContent(), null);
+
+            if (body.getRecommendations() != null) {
+                body.getRecommendations().forEach(r -> {
+                    Recommendation recommendation = new Recommendation(body.getProductId(), r.getRecommendationId(), r.getAuthor(), r.getRate(), r.getContent(), null);
                     monoList.add(recommendationFacade.createRecommendation(recommendation));
                 });
             }
 
-            if (productAggregate.getReviews() != null) {
-                productAggregate.getReviews().forEach(r -> {
-                    Review review = new Review(productAggregate.getProductId(), r.getReviewId(), r.getAuthor(), r.getSubject(), r.getContent(), null);
+            if (body.getReviews() != null) {
+                body.getReviews().forEach(r -> {
+                    Review review = new Review(body.getProductId(), r.getReviewId(), r.getAuthor(), r.getSubject(), r.getContent(), null);
                     monoList.add(reviewFacade.createReview(review));
                 });
             }
 
-            LOG.debug("createCompositeProduct: composite entities created for productId: {}", productAggregate.getProductId());
+            LOG.debug("createCompositeProduct: composite entities created for productId: {}", body.getProductId());
 
             return Mono.zip(r -> "", monoList.toArray(new Mono[0]))
                     .doOnError(ex -> LOG.warn("createCompositeProduct failed: {}", ex.toString()))
@@ -89,6 +101,10 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
 
     @Override
     public Mono<ProductAggregate> getProduct(int productId, int delay, int faultPercent) {
+        return observationWithProductInfo(productId, () -> getProductInternal(productId, delay, faultPercent));
+    }
+
+    private Mono<ProductAggregate> getProductInternal(int productId, int delay, int faultPercent) {
         LOG.info("Will get composite product info for product.id={}", productId);
         return Mono.zip(
                         values -> createProductAggregate(
@@ -103,28 +119,40 @@ public class ProductCompositeServiceImpl implements ProductCompositeService {
 
     @Override
     public Mono<Void> deleteProduct(int productId) {
+        return observationWithProductInfo(productId, () -> deleteProductInternal(productId));
+    }
+
+    private Mono<Void> deleteProductInternal(int productId) {
         try {
+
             LOG.info("Will delete a product aggregate for product.id: {}", productId);
-            return Mono.zip(
-                r -> "",
-                getLogAuthorizationInfoMono(),
-                productFacade.deleteProduct(productId),
-                recommendationFacade.deleteRecommendations(productId),
-                reviewFacade.deleteReviews(productId))
-            .doOnError(ex -> LOG.warn("delete failed: {}", ex.toString()))
-            .log(LOG.getName(), FINE).then();
+
+            return Mono.zip(r -> "",
+                            getLogAuthorizationInfoMono(),
+                            productFacade.deleteProduct(productId),
+                            recommendationFacade.deleteRecommendations(productId),
+                            reviewFacade.deleteReviews(productId))
+                    .doOnError(ex -> LOG.warn("delete failed: {}", ex.toString()))
+                    .log(LOG.getName(), FINE).then();
+
         } catch (RuntimeException re) {
             LOG.warn("deleteCompositeProduct failed: {}", re.toString());
             throw re;
         }
     }
 
+    private <T> T observationWithProductInfo(int productInfo, Supplier<T> supplier) {
+        return observationUtil.observe(
+                "composite observation",
+                "product info",
+                "productId",
+                String.valueOf(productInfo),
+                supplier);
+    }
+
     private ProductAggregate createProductAggregate(
-            SecurityContext sc,
-            Product product,
-            List<Recommendation> recommendations,
-            List<Review> reviews,
-            String serviceAddress) {
+            SecurityContext sc, Product product, List<Recommendation> recommendations, List<Review> reviews, String serviceAddress) {
+
         logAuthorizationInfo(sc);
 
         // 1. Setup product info

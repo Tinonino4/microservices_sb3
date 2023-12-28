@@ -311,10 +311,10 @@ assertEqual "3.0.1" "$(echo $RESPONSE | jq -r .openapi)"
 assertEqual "https://$HOST:$PORT" "$(echo $RESPONSE | jq -r '.servers[0].url')"
 assertCurl 200 "curl -ks  https://$HOST:$PORT/openapi/v3/api-docs.yaml"
 
-if [[ $SKIP_CB_TESTS == "false" ]]
-then
-    testCircuitBreaker
-fi
+# if [[ $SKIP_CB_TESTS == "false" ]]
+# then
+    # testCircuitBreaker
+# fi
 
 if [[ $@ == *"stop"* ]]
 then

@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static reactor.core.publisher.Mono.just;
 
 @SpringBootTest(webEnvironment = RANDOM_PORT,
 		classes = {TestSecurityConfig.class},
@@ -42,7 +41,6 @@ class ProductCompositeServiceApplicationTests {
 
 	@Autowired
 	private WebTestClient client;
-
 	@MockBean
 	private ProductFacade productFacade;
 	@MockBean
